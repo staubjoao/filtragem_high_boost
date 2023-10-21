@@ -2,44 +2,44 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-def high_boost_filter(image, mask, k):
-    # Aplicar a máscara à imagem para criar a máscara de nitidez
-    mask_image = cv2.filter2D(image, -1, mask)
-    
-    # Calcular a máscara de nitidez
-    mask = image - mask_image
 
-    # Aplicar o alto reforço à imagem original
-    sharpened = image + k * mask
+def show(name, img):
+    # shows the image
+    cv2.imshow(name, img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-    # Certifique-se de que os valores da imagem estejam no intervalo [0, 255]
-    sharpened = np.clip(sharpened, 0, 255).astype(np.uint8)
 
-    return sharpened
+# image loading and prepping
+image = cv2.imread(
+    'img1.tif',
+    cv2.IMREAD_GRAYSCALE
+    )
+image = np.array(image)
+image = image.astype("int16")  # we need negative values for the mask
 
-def main():
-    path = "./DIP3E_Original_Images_CH03/"
-    # Carregar a imagem em formato .tif
-    image = cv2.imread(f'{path}Fig0304(a)(breast_digital_Xray).tif', cv2.IMREAD_GRAYSCALE)
+# 5x5 smoothing (averaging) filter mask (Gonzalez uses Gaussian filter)
+smoothing_mask = (1 / 25) * np.ones((5, 5))
 
-    # Definir a máscara personalizada (exemplo: filtro de média)
-    custom_mask = np.array([[0, -1, 0],
-                            [-1, 5, -1],
-                            [0, -1, 0]], dtype=np.float32)
+# main part as explained in the book (Woods and Gonzalez) ---------------------
 
-    # Definir o valor de k (fator de alto reforço)
-    k = 2.0
+# 1. blur the original image
+blurred_img = cv2.filter2D(image, -1, smoothing_mask)
 
-    # Aplicar a função com a máscara personalizada
-    sharpened_image = high_boost_filter(image, custom_mask, k)
+# 2. subtract the blurred image from the original
+mask = image - blurred_img
 
-    # Exibir a imagem resultante com Matplotlib
-    plt.figure(figsize=(10, 5))
-    plt.subplot(121), plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), cmap='gray')
-    plt.title('Imagem Original'), plt.axis('off')
-    plt.subplot(122), plt.imshow(sharpened_image, cmap='gray')
-    plt.title('Imagem Alto Reforço'), plt.axis('off')
+# 3. add the mask (weighted) to the original
+k = 4.5  # k > 1 for highboost filtering
+sharpened = image + k * mask
 
-    plt.show()
+# end main part ---------------------------------------------------------------
 
-main()
+# clip everybody into [0, 255]
+sharpened = np.clip(sharpened, 0, 255)
+
+show("Original", image.astype("uint8"))
+show("Blurred", blurred_img.astype("uint8"))
+show("Mask", mask.astype("uint8"))
+show("Highboost", sharpened.astype("uint8"))
+show("Original (again)", image.astype("uint8"))

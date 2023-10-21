@@ -1,3 +1,4 @@
+import sys
 import cv2
 import numpy as np
 
@@ -10,8 +11,10 @@ def show(name, img):
 
 
 # image loading and prepping
+img_name = sys.argv[1]
+
 image = cv2.imread(
-    'img1.tif',
+    img_name,
     cv2.IMREAD_GRAYSCALE
     )
 image = np.array(image)
@@ -30,15 +33,17 @@ mask = image - blurred_img
 
 # 3. add the mask (weighted) to the original
 k = 4.5  # k > 1 for highboost filtering
-sharpened = image + k * mask
+highboost = image + k * mask
 
 # end main part ---------------------------------------------------------------
 
 # clip everybody into [0, 255]
-sharpened = np.clip(sharpened, 0, 255)
+highboost = np.clip(highboost, 0, 255)
 
 show("Original", image.astype("uint8"))
 show("Blurred", blurred_img.astype("uint8"))
 show("Mask", mask.astype("uint8"))
-show("Highboost", sharpened.astype("uint8"))
+show("Highboost", highboost.astype("uint8"))
 show("Original (again)", image.astype("uint8"))
+
+cv2.imwrite(f"{img_name[:-4]}_highboost{img_name[-4:]}", highboost.astype("uint8"))
